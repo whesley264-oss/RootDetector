@@ -13,8 +13,6 @@
  * Android Java/Kotlin code to perform root detection.
  */
 
-using namespace RootDetector;
-
 /**
  * @brief Escapes special characters in a string for JSON output.
  * @param str String to escape.
@@ -63,7 +61,7 @@ static std::string jsonEscape(const std::string& str) {
  * @param report The root detection report to convert.
  * @return JSON string representation.
  */
-static std::string generateJsonReport(const RootDetectionReport& report) {
+static std::string generateJsonReport(const RootDetector::RootDetectionReport& report) {
     std::ostringstream json;
 
     json << "{\n";
@@ -71,7 +69,7 @@ static std::string generateJsonReport(const RootDetectionReport& report) {
     json << "  \"checks\": [\n";
 
     for (size_t i = 0; i < report.checks.size(); ++i) {
-        const CheckResult& check = report.checks[i];
+        const RootDetector::CheckResult& check = report.checks[i];
         json << "    {\n";
         json << "      \"name\": \"" << jsonEscape(check.name) << "\",\n";
         json << "      \"result\": " << (check.result ? "true" : "false") << ",\n";
