@@ -104,7 +104,7 @@ Java_com_rootdetector_app_RootDetector_nativeDetectRoot(
     jobject /* this */) {
 
     // Create RootDetector instance and run detection
-    RootDetector detector;
+    RootDetector::RootDetector detector;
     RootDetectionReport report = detector.detectRoot();
 
     // Generate JSON report
