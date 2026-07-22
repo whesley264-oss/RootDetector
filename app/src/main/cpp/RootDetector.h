@@ -126,20 +126,17 @@ public:
     CheckResult checkSystemPaths();
 
 private:
-    /**
-     * @brief Common paths where 'su' binary might exist.
-     */
-    static constexpr const char* SU_PATHS[];
+    // Common paths where 'su' binary might exist
+    static const char* const SU_PATHS[];
+    static constexpr size_t SU_PATHS_COUNT = 8;
 
-    /**
-     * @brief Magisk-related files and directories.
-     */
-    static constexpr const char* MAGISK_PATHS[];
+    // Magisk-related files and directories
+    static const char* const MAGISK_PATHS[];
+    static constexpr size_t MAGISK_PATHS_COUNT = 12;
 
-    /**
-     * @brief Root management application package names.
-     */
-    static constexpr const char* ROOT_APP_PACKAGES[];
+    // Root management application package names
+    static const char* const ROOT_APP_PACKAGES[];
+    static constexpr size_t ROOT_APP_PACKAGES_COUNT = 11;
 
     /**
      * @brief Checks if a file exists at the given path.

@@ -14,8 +14,8 @@
 
 namespace RootDetector {
 
-// Static member array definitions
-constexpr const char* RootDetector::SU_PATHS[] = {
+// Static member array definitions with explicit size
+const char* const RootDetector::SU_PATHS[] = {
     "/system/bin/su",
     "/system/xbin/su",
     "/sbin/su",
@@ -26,7 +26,7 @@ constexpr const char* RootDetector::SU_PATHS[] = {
     "/data/local/su"
 };
 
-constexpr const char* RootDetector::MAGISK_PATHS[] = {
+const char* const RootDetector::MAGISK_PATHS[] = {
     "/data/adb/magisk",
     "/data/adb/magisk.img",
     "/data/adb/magiskrc",
@@ -41,7 +41,7 @@ constexpr const char* RootDetector::MAGISK_PATHS[] = {
     "/cache/magisk.log"
 };
 
-constexpr const char* RootDetector::ROOT_APP_PACKAGES[] = {
+const char* const RootDetector::ROOT_APP_PACKAGES[] = {
     "eu.chainfire.supersu",
     "com.topjohnwu.magisk",
     "com.koushikdutta.superuser",
