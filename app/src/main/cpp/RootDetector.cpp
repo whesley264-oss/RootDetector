@@ -184,6 +184,11 @@ RootDetectionReport RootDetector::detectRoot() {
     report.checks.push_back(checkRootManagementApps());
     report.checks.push_back(checkSelinuxStatus());
     report.checks.push_back(checkSystemPaths());
+    report.checks.push_back(checkLsCommand());
+    report.checks.push_back(checkSuBinaryPermissions());
+    report.checks.push_back(checkRWPartitions());
+    report.checks.push_back(checkRootProcesses());
+    report.checks.push_back(checkCustomRom());
 
     // Determine overall root detection
     // If any check indicates root, mark as detected
@@ -583,6 +588,191 @@ CheckResult RootDetector::checkSystemPaths() {
         "system paths",
         false,
         "No suspicious system paths detected"
+    );
+}
+
+CheckResult RootDetector::checkLsCommand() {
+    // Try to execute ls in system directories that require root access
+    const char* restrictedDirs[] = {
+        "/data/root",
+        "/data/su",
+        "/sbin",
+        "/system/app"
+    };
+
+    std::vector<std::string> accessibleDirs;
+
+    for (const char* dir : restrictedDirs) {
+        auto [success, output] = executeCommand(dir, 500);
+        if (success && !output.empty() && output.find("Permission denied") == std::string::npos) {
+            accessibleDirs.push_back(dir);
+        }
+    }
+
+    if (!accessibleDirs.empty()) {
+        std::string reason = "ls command succeeded in restricted directories: ";
+        for (size_t i = 0; i < accessibleDirs.size() && i < 3; ++i) {
+            if (i > 0) reason += ", ";
+            reason += accessibleDirs[i];
+        }
+        return CheckResult("ls command access", true, reason);
+    }
+
+    return CheckResult(
+        "ls command access",
+        false,
+        "Unable to list restricted directories without proper permissions"
+    );
+}
+
+CheckResult RootDetector::checkSuBinaryPermissions() {
+    // Check for su binary with SUID bit set
+    const char* suPaths[] = {
+        "/system/bin/su",
+        "/system/xbin/su",
+        "/sbin/su"
+    };
+
+    for (const char* path : suPaths) {
+        struct stat st;
+        if (stat(path, &st) == 0) {
+            // Check if SUID bit is set (root ownership + SUID permission)
+            if ((st.st_mode & S_ISUID) && st.st_uid == 0) {
+                std::string reason = std::string("su binary at ") + path + " has SUID bit set (root ownership)";
+                return CheckResult("su binary permissions", true, reason);
+            }
+        }
+    }
+
+    return CheckResult(
+        "su binary permissions",
+        false,
+        "No su binary with dangerous SUID permissions found"
+    );
+}
+
+CheckResult RootDetector::checkRWPartitions() {
+    std::string mountsContent;
+    if (!readFile("/proc/mounts", mountsContent)) {
+        return CheckResult("RW partitions", false, "Unable to read mount information");
+    }
+
+    // System should typically be read-only on non-rooted devices
+    // Check if /system or / is mounted RW when it should be RO
+    bool systemRW = false;
+    bool rootRW = false;
+
+    std::istringstream iss(mountsContent);
+    std::string line;
+    while (std::getline(iss, line)) {
+        // Check for system partition RW mount
+        if (line.find("/system") != std::string::npos) {
+            if (line.find(" rw") != std::string::npos || line.find(",rw,") != std::string::npos) {
+                systemRW = true;
+            }
+        }
+        // Check for root partition RW mount
+        if (line.find(" / ") != std::string::npos && line.find(" / ") < 10) {
+            if (line.find(" rw") != std::string::npos || line.find(",rw,") != std::string::npos) {
+                rootRW = true;
+            }
+        }
+    }
+
+    if (systemRW || rootRW) {
+        std::string reason;
+        if (systemRW && rootRW) {
+            reason = "Both /system and / mounted as RW";
+        } else if (systemRW) {
+            reason = "/system partition mounted as RW (should be RO)";
+        } else {
+            reason = "Root (/) partition mounted as RW";
+        }
+        return CheckResult("RW partitions", true, reason);
+    }
+
+    return CheckResult(
+        "RW partitions",
+        false,
+        "System partitions mounted correctly as read-only"
+    );
+}
+
+CheckResult RootDetector::checkRootProcesses() {
+    // Check for running root-related processes
+    const char* rootProcesses[] = {
+        "su daemon",
+        "magiskd",
+        "daemonsu",
+        "superuser"
+    };
+
+    // Read process list
+    auto [success, output] = executeCommand("ps -A 2>/dev/null", 1000);
+    if (!success) {
+        return CheckResult("root processes", false, "Unable to read process list");
+    }
+
+    std::vector<std::string> foundProcesses;
+    for (const char* proc : rootProcesses) {
+        if (output.find(proc) != std::string::npos) {
+            foundProcesses.push_back(proc);
+        }
+    }
+
+    if (!foundProcesses.empty()) {
+        std::string reason = "Root-related processes detected: ";
+        for (size_t i = 0; i < foundProcesses.size(); ++i) {
+            if (i > 0) reason += ", ";
+            reason += foundProcesses[i];
+        }
+        return CheckResult("root processes", true, reason);
+    }
+
+    return CheckResult(
+        "root processes",
+        false,
+        "No root-related processes detected"
+    );
+}
+
+CheckResult RootDetector::checkCustomRom() {
+    std::string buildDisplay, buildFingerprint;
+
+    getSystemProperty("ro.build.display.id", buildDisplay);
+    getSystemProperty("ro.build.fingerprint", buildFingerprint);
+
+    // Check for common custom ROM indicators
+    const char* romIndicators[] = {
+        "lineage",
+        "pixelExperience",
+        "crDroid",
+        "evolution",
+        "arrowos",
+        "havoc",
+        "los",
+        "resurrection",
+        "aosp",
+        "pixel",
+        "xiaomi.eu",
+        "miui",
+        "flyme"
+    };
+
+    std::string searchStr = buildDisplay + " " + buildFingerprint;
+    std::transform(searchStr.begin(), searchStr.end(), searchStr.begin(), ::tolower);
+
+    for (const char* rom : romIndicators) {
+        if (searchStr.find(rom) != std::string::npos) {
+            std::string reason = std::string("Custom ROM detected: ") + buildDisplay;
+            return CheckResult("custom ROM", true, reason);
+        }
+    }
+
+    return CheckResult(
+        "custom ROM",
+        false,
+        "Stock ROM detected"
     );
 }
 

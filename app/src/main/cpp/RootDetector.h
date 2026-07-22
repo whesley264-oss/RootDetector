@@ -125,6 +125,39 @@ public:
      */
     CheckResult checkSystemPaths();
 
+    /**
+     * @brief Attempts to execute 'ls' command in system directories.
+     * Root access often allows listing restricted directories.
+     * @return CheckResult with the outcome of the check.
+     */
+    CheckResult checkLsCommand();
+
+    /**
+     * @brief Checks for suid binaries in /system/bin and /system/xbin.
+     * SUID binaries are a common root technique.
+     * @return CheckResult with the outcome of the check.
+     */
+    CheckResult checkSuBinaryPermissions();
+
+    /**
+     * @brief Checks if any partition is mounted as RW that should be RO.
+     * System partitions should typically be read-only.
+     * @return CheckResult with the outcome of the check.
+     */
+    CheckResult checkRWPartitions();
+
+    /**
+     * @brief Checks for root-related processes running on the device.
+     * @return CheckResult with the outcome of the check.
+     */
+    CheckResult checkRootProcesses();
+
+    /**
+     * @brief Checks for custom ROM firmware indicators.
+     * @return CheckResult with the outcome of the check.
+     */
+    CheckResult checkCustomRom();
+
 private:
     // Common paths where 'su' binary might exist
     static const char* const SU_PATHS[];

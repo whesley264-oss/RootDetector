@@ -1,6 +1,6 @@
 # RootDetector
 
-Android root detection application with native C++ core.
+Android root detection application with native C++ core. The app provides a simple interface with a single button to trigger all root detection checks.
 
 ## Structure
 
@@ -14,6 +14,7 @@ rootdetector/
 │   │   │   ├── JNI.cpp
 │   │   │   └── CMakeLists.txt
 │   │   ├── java/          # Kotlin interface
+│   │   │   └── MainActivity.kt
 │   │   └── res/           # Android resources
 │   └── build.gradle.kts
 ├── build.gradle.kts
@@ -22,13 +23,35 @@ rootdetector/
 
 ## Detection Methods
 
-- su binary presence in common paths
-- Magisk files and directories
-- Root management apps (SuperSU, Magisk, KingRoot, etc.)
-- Dangerous system properties (ro.secure, ro.debuggable, etc.)
-- Mount points and partition permissions
-- Build tags (test-keys detection)
-- SELinux status
+The application performs the following checks when the CHECK button is pressed:
+
+1. **su binary** - Searches common paths for the 'su' binary (/system/bin/su, /system/xbin/su, etc.)
+
+2. **Magisk files** - Detects Magisk-related files and directories in the system
+
+3. **su execution** - Attempts to execute 'su -c id' to verify if superuser access works
+
+4. **System properties** - Checks ro.secure, ro.debuggable, ro.build.tags for dangerous values
+
+5. **Mount points** - Analyzes /proc/mounts and /proc/self/mountinfo for suspicious configurations
+
+6. **Build tags** - Detects 'test-keys' in build tags, indicating custom/unsigned builds
+
+7. **Root management apps** - Searches for SuperSU, Magisk, KingRoot and other root app files
+
+8. **SELinux status** - Checks if SELinux is disabled/permissive
+
+9. **System paths** - Verifies suspicious system paths like /sbin, /data/local/su
+
+10. **ls command access** - Attempts to list restricted directories (/data/root, /sbin, /system/app)
+
+11. **su binary permissions** - Checks if su binary has SUID bit set with root ownership
+
+12. **RW partitions** - Verifies if /system or / are mounted as RW (should be RO)
+
+13. **Root processes** - Scans running processes for root-related daemons (magiskd, daemonsu)
+
+14. **Custom ROM** - Detects custom ROM indicators in build display ID and fingerprint
 
 ## Building
 
@@ -46,13 +69,32 @@ Debug and release APKs are generated and available as workflow artifacts.
 
 ## Native Library
 
-The C++ core exposes a single JNI function:
+The C++ core exposes the following JNI functions:
 
-```
-Java_com_rootdetector_app_RootDetector_nativeDetectRoot()
+- `Java_com_rootdetector_app_MainActivity_nativeDetectRoot()` - Runs all checks and returns JSON report
+- `Java_com_rootdetector_app_MainActivity_nativeGetVersion()` - Returns library version
+
+The JSON response format:
+
+```json
+{
+  "rootDetected": true,
+  "checks": [
+    {
+      "name": "su binary",
+      "result": true,
+      "reason": "Found 'su' binary at: /system/xbin/su"
+    }
+  ]
+}
 ```
 
-Returns a JSON report with all detection results.
+## CI/CD
+
+GitHub Actions workflow is configured in `.github/workflows/android.yml`:
+- Runs on every push and pull request to main
+- Builds both debug and release APKs
+- Uploads artifacts for download
 
 ## License
 
