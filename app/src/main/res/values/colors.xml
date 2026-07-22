@@ -1,34 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary colors - vibrant cyan/teal -->
-    <color name="primary">#00BCD4</color>
-    <color name="primary_dark">#0097A7</color>
-    <color name="accent">#FF4081</color>
+    <!-- Silver metallic palette -->
+    <color name="primary">#B8C6D4</color>
+    <color name="primary_dark">#8A9DAD</color>
+    <color name="primary_light">#E8EFF5</color>
+    <color name="accent">#7A8B9A</color>
 
-    <!-- Dark theme backgrounds -->
-    <color name="background">#121212</color>
-    <color name="surface">#1E1E1E</color>
-    <color name="card_background">#252525</color>
-    <color name="divider">#333333</color>
+    <!-- Metal gradients -->
+    <color name="silver_light">#F0F4F8</color>
+    <color name="silver_mid">#C8D4DE</color>
+    <color name="silver_dark">#8899AA</color>
+    <color name="steel">#6B7A88</color>
+
+    <!-- Dark backgrounds -->
+    <color name="background">#1A1D21</color>
+    <color name="surface">#22272D</color>
+    <color name="card_background">#2A3038</color>
+    <color name="divider">#3D4550</color>
 
     <!-- Text colors -->
-    <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#B0B0B0</color>
-    <color name="text_hint">#707070</color>
+    <color name="text_primary">#E8EFF5</color>
+    <color name="text_secondary">#A8B8C8</color>
+    <color name="text_hint">#687888</color>
 
-    <!-- Status colors - vibrant -->
-    <color name="status_secure">#00E676</color>
-    <color name="status_warning">#FFAB00</color>
-    <color name="status_danger">#FF1744</color>
+    <!-- Status colors -->
+    <color name="status_secure">#68D391</color>
+    <color name="status_warning">#F6AD55</color>
+    <color name="status_danger">#FC8181</color>
 
-    <!-- Accent variations -->
-    <color name="check_button">#00BCD4</color>
-    <color name="check_button_pressed">#0097A7</color>
-    <color name="ripple">#4000BCD4</color>
-
-    <!-- Gradient start/end for decorative elements -->
-    <color name="gradient_start">#00BCD4</color>
-    <color name="gradient_end">#FF4081</color>
+    <!-- Button -->
+    <color name="check_button">#B8C6D4</color>
+    <color name="check_button_pressed">#8A9DAD</color>
+    <color name="ripple">#40B8C6D4</color>
 
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
