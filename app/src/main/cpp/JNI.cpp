@@ -97,7 +97,7 @@ static std::string generateJsonReport(const RootDetector::RootDetectionReport& r
  * @return JSON string containing the root detection report.
  */
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_rootdetector_app_RootDetector_nativeDetectRoot(
+Java_com_rootdetector_app_MainActivity_nativeDetectRoot(
     JNIEnv* env,
     jobject /* this */) {
 
@@ -120,7 +120,7 @@ Java_com_rootdetector_app_RootDetector_nativeDetectRoot(
  * @return Version string.
  */
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_rootdetector_app_RootDetector_nativeGetVersion(
+Java_com_rootdetector_app_MainActivity_nativeGetVersion(
     JNIEnv* env,
     jobject /* this */) {
     return env->NewStringUTF("1.0.0");
