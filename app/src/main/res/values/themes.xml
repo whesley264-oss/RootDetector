@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.RootDetector" parent="Theme.Material3.NoActionBar">
+    <style name="Theme.RootDetector" parent="Theme.MaterialComponents.NoActionBar">
         <!-- Primary brand color -->
         <item name="colorPrimary">@color/silver_mid</item>
         <item name="colorPrimaryDark">@color/silver_dark</item>
