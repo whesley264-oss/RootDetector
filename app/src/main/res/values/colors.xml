@@ -1,19 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#1976D2</color>
-    <color name="primary_dark">#1565C0</color>
-    <color name="accent">#03A9F4</color>
+    <!-- Primary colors - vibrant cyan/teal -->
+    <color name="primary">#00BCD4</color>
+    <color name="primary_dark">#0097A7</color>
+    <color name="accent">#FF4081</color>
 
-    <color name="background">#F5F5F5</color>
-    <color name="card_background">#FFFFFF</color>
-    <color name="divider">#E0E0E0</color>
+    <!-- Dark theme backgrounds -->
+    <color name="background">#121212</color>
+    <color name="surface">#1E1E1E</color>
+    <color name="card_background">#252525</color>
+    <color name="divider">#333333</color>
 
-    <color name="text_primary">#212121</color>
-    <color name="text_secondary">#757575</color>
+    <!-- Text colors -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B0B0B0</color>
+    <color name="text_hint">#707070</color>
 
-    <color name="status_secure">#4CAF50</color>
-    <color name="status_warning">#FF9800</color>
-    <color name="status_danger">#F44336</color>
+    <!-- Status colors - vibrant -->
+    <color name="status_secure">#00E676</color>
+    <color name="status_warning">#FFAB00</color>
+    <color name="status_danger">#FF1744</color>
+
+    <!-- Accent variations -->
+    <color name="check_button">#00BCD4</color>
+    <color name="check_button_pressed">#0097A7</color>
+    <color name="ripple">#4000BCD4</color>
+
+    <!-- Gradient start/end for decorative elements -->
+    <color name="gradient_start">#00BCD4</color>
+    <color name="gradient_end">#FF4081</color>
 
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
