@@ -103,7 +103,7 @@ Java_com_rootdetector_app_RootDetector_nativeDetectRoot(
 
     // Create RootDetector instance and run detection
     RootDetector::RootDetector detector;
-    RootDetectionReport report = detector.detectRoot();
+    RootDetector::RootDetectionReport report = detector.detectRoot();
 
     // Generate JSON report
     std::string jsonReport = generateJsonReport(report);
