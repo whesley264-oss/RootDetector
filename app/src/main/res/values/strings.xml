@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Root Detector</string>
+    <string name="app_title">Root Detector</string>
+    <string name="app_subtitle">NDK Root Detection for Android</string>
+    <string name="scanning">Scanning…</string>
+    <string name="loading">Loading results…</string>
+</resources>
