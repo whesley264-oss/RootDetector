@@ -63,11 +63,3 @@ ou
 ```bash
 ./gradlew assembleRelease
 ```
-
-## CI
-
-O projeto possui um workflow do GitHub Actions que gera automaticamente os APKs Debug e Release.
-
-## Licença
-
-MIT
