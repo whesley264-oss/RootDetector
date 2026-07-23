@@ -37,17 +37,17 @@ bool RootDetector::fileExists(const char* path) {
     return path != nullptr && access(path, F_OK) == 0;
 }
 
-bool RootDetector::readFile(const char* path, std::string& out) {
+bool RootDetector::readFile(const char* path, std::string& content) {
     if (!path) return false;
     std::ifstream file(path);
     if (!file.is_open()) return false;
-    std::stringstream buf;
-    buf << file.rdbuf();
-    out = buf.str();
-    return file.eof() || !buf.fail();
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    content = buffer.str();
+    return file.eof() || !buffer.fail();
 }
 
-bool RootDetector::getSystemProperty(const char* name, std::string& out) {
+bool RootDetector::getSystemProperty(const char* name, std::string& value) {
     if (!name) return false;
     FILE* pipe = popen(("getprop " + std::string(name)).c_str(), "r");
     if (!pipe) return false;
@@ -55,10 +55,10 @@ bool RootDetector::getSystemProperty(const char* name, std::string& out) {
     if (fgets(buf, sizeof(buf), pipe)) {
         size_t len = strlen(buf);
         if (len > 0 && buf[len - 1] == '\n') buf[len - 1] = '\0';
-        out = buf;
+        value = buf;
     }
     int status = pclose(pipe);
-    return status == 0 && !out.empty();
+    return status == 0 && !value.empty();
 }
 
 bool RootDetector::isRunningAsRoot() {
@@ -66,37 +66,43 @@ bool RootDetector::isRunningAsRoot() {
 }
 
 std::pair<bool, std::string> RootDetector::executeCommand(const char* cmd, int timeoutMs) {
-    std::pair<bool, std::string> res{false, ""};
-    if (!cmd) return res;
+    std::pair<bool, std::string> result{false, ""};
+    if (!cmd) return result;
+
     FILE* pipe = popen(cmd, "r");
-    if (!pipe) return res;
+    if (!pipe) return result;
+
     int fd = fileno(pipe);
     fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
-    std::string out;
+
+    std::string output;
     char buf[256] = {0};
+
     alarm(timeoutMs / 1000);
     while (true) {
-        ssize_t n = read(fd, buf, sizeof(buf) - 1);
-        if (n > 0) {
-            buf[n] = '\0';
-            out += buf;
-        } else if (n == 0) {
+        ssize_t bytesRead = read(fd, buf, sizeof(buf) - 1);
+        if (bytesRead > 0) {
+            buf[bytesRead] = '\0';
+            output += buf;
+        } else if (bytesRead == 0) {
             break;
         } else if (errno != EAGAIN && errno != EWOULDBLOCK) {
             break;
-        } else if (!out.empty()) {
+        } else if (!output.empty()) {
             break;
         }
     }
     alarm(0);
+
     int status = pclose(pipe);
-    res.first = status == 0;
-    res.second = out;
-    return res;
+    result.first = status == 0;
+    result.second = output;
+    return result;
 }
 
 RootDetectionReport RootDetector::detectRoot() {
     RootDetectionReport report;
+
     report.checks.push_back(checkSuBinary());
     report.checks.push_back(checkMagiskFiles());
     report.checks.push_back(checkSuExecution());
@@ -112,8 +118,8 @@ RootDetectionReport RootDetector::detectRoot() {
     report.checks.push_back(checkRootProcesses());
     report.checks.push_back(checkCustomRom());
 
-    for (const auto& c : report.checks) {
-        if (c.result) {
+    for (const auto& check : report.checks) {
+        if (check.result) {
             report.rootDetected = true;
             break;
         }
@@ -122,10 +128,10 @@ RootDetectionReport RootDetector::detectRoot() {
 }
 
 CheckResult RootDetector::checkSuBinary() {
-    for (const char* p : SU_PATHS) {
+    for (const char* path : SU_PATHS) {
         struct stat st;
-        if (stat(p, &st) == 0 && (st.st_mode & S_IXUSR)) {
-            return CheckResult("su binary", true, std::string("Found at: ") + p);
+        if (stat(path, &st) == 0 && (st.st_mode & S_IXUSR)) {
+            return CheckResult("su binary", true, std::string("Found at: ") + path);
         }
     }
     return CheckResult("su binary", false, "Not found in known locations");
@@ -133,8 +139,8 @@ CheckResult RootDetector::checkSuBinary() {
 
 CheckResult RootDetector::checkMagiskFiles() {
     std::vector<std::string> found;
-    for (const char* p : MAGISK_PATHS) {
-        if (fileExists(p)) found.push_back(p);
+    for (const char* path : MAGISK_PATHS) {
+        if (fileExists(path)) found.push_back(path);
     }
     if (!found.empty()) {
         std::string paths;
@@ -148,12 +154,12 @@ CheckResult RootDetector::checkMagiskFiles() {
 }
 
 CheckResult RootDetector::checkSuExecution() {
-    auto [ok, out] = executeCommand("su -c id 2>&1", 2000);
-    if (ok && !out.empty()) {
-        bool isRoot = out.find("uid=0") != std::string::npos ||
-                      out.find("euid=0") != std::string::npos;
+    auto [success, output] = executeCommand("su -c id 2>&1", 2000);
+    if (success && !output.empty()) {
+        bool isRoot = output.find("uid=0") != std::string::npos ||
+                      output.find("euid=0") != std::string::npos;
         return CheckResult("su execution", true,
-            isRoot ? "Root access: " + out : "su works but not root: " + out);
+            isRoot ? "Root access: " + output : "su works but not root: " + output);
     }
     return CheckResult("su execution", false, "su command unavailable");
 }
@@ -244,12 +250,12 @@ CheckResult RootDetector::checkRootManagementApps() {
         "/cache/superuser.img"
     };
     std::vector<std::string> found;
-    for (const char* p : paths) {
-        std::string s(p);
-        if (s.find('*') != std::string::npos) {
-            if (fileExists(s.substr(0, s.find('*')).c_str())) found.push_back(s);
-        } else if (fileExists(p)) {
-            found.push_back(s);
+    for (const char* path : paths) {
+        std::string pathStr(path);
+        if (pathStr.find('*') != std::string::npos) {
+            if (fileExists(pathStr.substr(0, pathStr.find('*')).c_str())) found.push_back(pathStr);
+        } else if (fileExists(path)) {
+            found.push_back(pathStr);
         }
     }
     if (!found.empty()) {
@@ -282,8 +288,8 @@ CheckResult RootDetector::checkSystemPaths() {
     const char* paths[] = {"/sbin", "/vendor/sbin", "/system/xbin",
                           "/system/bin/su", "/data/local/su", "/data/local/bin/su"};
     std::vector<std::string> found;
-    for (const char* p : paths) {
-        if (fileExists(p)) found.push_back(p);
+    for (const char* path : paths) {
+        if (fileExists(path)) found.push_back(path);
     }
     if (!found.empty()) {
         std::string reason;
@@ -299,10 +305,10 @@ CheckResult RootDetector::checkSystemPaths() {
 CheckResult RootDetector::checkLsCommand() {
     const char* dirs[] = {"/data/root", "/data/su", "/sbin", "/system/app"};
     std::vector<std::string> accessible;
-    for (const char* d : dirs) {
-        auto [ok, out] = executeCommand(d, 500);
-        if (ok && !out.empty() && out.find("Permission denied") == std::string::npos) {
-            accessible.push_back(d);
+    for (const char* dir : dirs) {
+        auto [success, output] = executeCommand(dir, 500);
+        if (success && !output.empty() && output.find("Permission denied") == std::string::npos) {
+            accessible.push_back(dir);
         }
     }
     if (!accessible.empty()) {
@@ -318,10 +324,10 @@ CheckResult RootDetector::checkLsCommand() {
 
 CheckResult RootDetector::checkSuBinaryPermissions() {
     const char* paths[] = {"/system/bin/su", "/system/xbin/su", "/sbin/su"};
-    for (const char* p : paths) {
+    for (const char* path : paths) {
         struct stat st;
-        if (stat(p, &st) == 0 && (st.st_mode & S_ISUID) && st.st_uid == 0) {
-            return CheckResult("su binary permissions", true, std::string("SUID root: ") + p);
+        if (stat(path, &st) == 0 && (st.st_mode & S_ISUID) && st.st_uid == 0) {
+            return CheckResult("su binary permissions", true, std::string("SUID root: ") + path);
         }
     }
     return CheckResult("su binary permissions", false, "No dangerous SUID found");
@@ -333,9 +339,9 @@ CheckResult RootDetector::checkRWPartitions() {
         return CheckResult("RW partitions", false, "Cannot read mounts");
     }
     bool systemRW = false, rootRW = false;
-    std::istringstream iss(mounts);
+    std::istringstream stream(mounts);
     std::string line;
-    while (std::getline(iss, line)) {
+    while (std::getline(stream, line)) {
         if (line.find("/system") != std::string::npos &&
             (line.find(" rw") != std::string::npos || line.find(",rw,") != std::string::npos)) {
             systemRW = true;
@@ -354,12 +360,12 @@ CheckResult RootDetector::checkRWPartitions() {
 }
 
 CheckResult RootDetector::checkRootProcesses() {
-    auto [ok, out] = executeCommand("ps -A 2>/dev/null", 1000);
-    if (!ok) return CheckResult("root processes", false, "Cannot read processes");
-    const char* procs[] = {"su daemon", "magiskd", "daemonsu", "superuser"};
+    auto [success, output] = executeCommand("ps -A 2>/dev/null", 1000);
+    if (!success) return CheckResult("root processes", false, "Cannot read processes");
+    const char* processes[] = {"su daemon", "magiskd", "daemonsu", "superuser"};
     std::vector<std::string> found;
-    for (const char* p : procs) {
-        if (out.find(p) != std::string::npos) found.push_back(p);
+    for (const char* proc : processes) {
+        if (output.find(proc) != std::string::npos) found.push_back(proc);
     }
     if (!found.empty()) {
         std::string reason;
@@ -380,12 +386,12 @@ CheckResult RootDetector::checkCustomRom() {
                           "arrowos", "havoc", "los", "resurrection", "xiaomi.eu", "flyme"};
     std::string search = buildDisplay + " " + buildFingerprint;
     std::transform(search.begin(), search.end(), search.begin(), ::tolower);
-    for (const char* r : roms) {
-        if (search.find(r) != std::string::npos) {
+    for (const char* rom : roms) {
+        if (search.find(rom) != std::string::npos) {
             return CheckResult("custom ROM", true, buildDisplay);
         }
     }
     return CheckResult("custom ROM", false, "Stock ROM");
 }
 
-} // namespace
+}

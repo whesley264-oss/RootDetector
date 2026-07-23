@@ -34,10 +34,10 @@ class MainActivity : AppCompatActivity() {
         tvResult = findViewById(R.id.resultTextView)
         progressBar = findViewById(R.id.progressBar)
 
-        btnCheck.setOnClickListener { runDetection() }
+        btnCheck.setOnClickListener { performScan() }
     }
 
-    private fun runDetection() {
+    private fun performScan() {
         btnCheck.isEnabled = false
         tvStatus.text = "SCANNING"
         tvStatus.setTextColor(getColor(R.color.primary))
@@ -48,9 +48,9 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val result = withContext(Dispatchers.Default) { nativeDetectRoot() }
-                showResults(result)
+                displayResults(result)
             } catch (e: Exception) {
-                showError("Error: ${e.message}")
+                displayError("Error: ${e.message}")
             } finally {
                 btnCheck.isEnabled = true
                 progressBar.visibility = ProgressBar.GONE
@@ -58,10 +58,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showResults(json: String) {
-        val obj = JSONObject(json)
-        val hasRoot = obj.getBoolean("rootDetected")
-        val checks = obj.getJSONArray("checks")
+    private fun displayResults(json: String) {
+        val data = JSONObject(json)
+        val hasRoot = data.getBoolean("rootDetected")
+        val checks = data.getJSONArray("checks")
 
         if (hasRoot) {
             tvStatus.text = "ROOT DETECTED"
@@ -78,15 +78,15 @@ class MainActivity : AppCompatActivity() {
         var clean = 0
 
         for (i in 0 until checks.length()) {
-            val c = checks.getJSONObject(i)
-            val name = c.getString("name")
-            val result = c.getBoolean("result")
-            val reason = c.getString("reason")
+            val check = checks.getJSONObject(i)
+            val name = check.getString("name")
+            val passed = check.getBoolean("result")
+            val reason = check.getString("reason")
 
-            if (result) warnings++ else clean++
+            if (passed) warnings++ else clean++
 
-            val sym = if (result) "!" else "-"
-            sb.appendLine("[$sym] ${name.uppercase()}")
+            val symbol = if (passed) "!" else "-"
+            sb.appendLine("[$symbol] ${name.uppercase()}")
             sb.appendLine("    $reason")
         }
 
@@ -97,11 +97,11 @@ class MainActivity : AppCompatActivity() {
         tvResult.text = sb.toString()
     }
 
-    private fun showError(msg: String) {
+    private fun displayError(message: String) {
         tvStatus.text = "ERROR"
         tvStatus.setTextColor(getColor(R.color.status_warning))
         tvSubtitle.text = "Scan failed"
-        tvResult.text = msg
+        tvResult.text = message
     }
 
     external fun nativeDetectRoot(): String
