@@ -12,10 +12,10 @@ import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var checkButton: com.google.android.material.button.MaterialButton
-    private lateinit var statusTextView: TextView
-    private lateinit var statusSubtitle: TextView
-    private lateinit var resultTextView: TextView
+    private lateinit var btnCheck: com.google.android.material.button.MaterialButton
+    private lateinit var tvStatus: TextView
+    private lateinit var tvSubtitle: TextView
+    private lateinit var tvResult: TextView
     private lateinit var progressBar: ProgressBar
 
     companion object {
@@ -28,92 +28,80 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        checkButton = findViewById(R.id.checkButton)
-        statusTextView = findViewById(R.id.statusTextView)
-        statusSubtitle = findViewById(R.id.statusSubtitle)
-        resultTextView = findViewById(R.id.resultTextView)
+        btnCheck = findViewById(R.id.checkButton)
+        tvStatus = findViewById(R.id.statusTextView)
+        tvSubtitle = findViewById(R.id.statusSubtitle)
+        tvResult = findViewById(R.id.resultTextView)
         progressBar = findViewById(R.id.progressBar)
 
-        checkButton.setOnClickListener {
-            performRootDetection()
-        }
+        btnCheck.setOnClickListener { runDetection() }
     }
 
-    private fun performRootDetection() {
-        checkButton.isEnabled = false
-        statusTextView.text = "SCANNING"
-        statusTextView.setTextColor(getColor(R.color.primary))
-        statusSubtitle.text = "Running security checks..."
-        resultTextView.text = ""
+    private fun runDetection() {
+        btnCheck.isEnabled = false
+        tvStatus.text = "SCANNING"
+        tvStatus.setTextColor(getColor(R.color.primary))
+        tvSubtitle.text = "Running security checks..."
+        tvResult.text = ""
         progressBar.visibility = ProgressBar.VISIBLE
 
         lifecycleScope.launch {
             try {
-                val jsonResult = withContext(Dispatchers.Default) {
-                    nativeDetectRoot()
-                }
-                displayResults(jsonResult)
+                val result = withContext(Dispatchers.Default) { nativeDetectRoot() }
+                showResults(result)
             } catch (e: Exception) {
-                displayError("Error: ${e.message}")
+                showError("Error: ${e.message}")
             } finally {
-                checkButton.isEnabled = true
+                btnCheck.isEnabled = true
                 progressBar.visibility = ProgressBar.GONE
             }
         }
     }
 
-    private fun displayResults(jsonResult: String) {
-        try {
-            val json = JSONObject(jsonResult)
-            val rootDetected = json.getBoolean("rootDetected")
-            val checks = json.getJSONArray("checks")
+    private fun showResults(json: String) {
+        val obj = JSONObject(json)
+        val hasRoot = obj.getBoolean("rootDetected")
+        val checks = obj.getJSONArray("checks")
 
-            if (rootDetected) {
-                statusTextView.text = "ROOT DETECTED"
-                statusTextView.setTextColor(getColor(R.color.status_danger))
-                statusSubtitle.text = "Security compromise found"
-            } else {
-                statusTextView.text = "DEVICE SECURE"
-                statusTextView.setTextColor(getColor(R.color.status_secure))
-                statusSubtitle.text = "No root access detected"
-            }
-
-            val builder = StringBuilder()
-            builder.appendLine("Device Analysis Complete")
-            builder.appendLine()
-
-            var detectedCount = 0
-            var cleanCount = 0
-
-            for (i in 0 until checks.length()) {
-                val check = checks.getJSONObject(i)
-                val name = check.getString("name")
-                val result = check.getBoolean("result")
-                val reason = check.getString("reason")
-
-                if (result) detectedCount++ else cleanCount++
-
-                val symbol = if (result) "!" else "-"
-                builder.appendLine("[$symbol] ${name.uppercase()}")
-                builder.appendLine("    $reason")
-            }
-
-            builder.appendLine()
-            builder.appendLine("---")
-            builder.appendLine("Summary: $detectedCount warnings, $cleanCount clean")
-
-            resultTextView.text = builder.toString()
-
-        } catch (e: Exception) {
-            displayError("Error parsing results: ${e.message}")
+        if (hasRoot) {
+            tvStatus.text = "ROOT DETECTED"
+            tvStatus.setTextColor(getColor(R.color.status_danger))
+            tvSubtitle.text = "Security compromise found"
+        } else {
+            tvStatus.text = "DEVICE SECURE"
+            tvStatus.setTextColor(getColor(R.color.status_secure))
+            tvSubtitle.text = "No root access detected"
         }
+
+        val sb = StringBuilder()
+        var warnings = 0
+        var clean = 0
+
+        for (i in 0 until checks.length()) {
+            val c = checks.getJSONObject(i)
+            val name = c.getString("name")
+            val result = c.getBoolean("result")
+            val reason = c.getString("reason")
+
+            if (result) warnings++ else clean++
+
+            val sym = if (result) "!" else "-"
+            sb.appendLine("[$sym] ${name.uppercase()}")
+            sb.appendLine("    $reason")
+        }
+
+        sb.appendLine()
+        sb.appendLine("---")
+        sb.appendLine("Summary: $warnings warnings, $clean clean")
+
+        tvResult.text = sb.toString()
     }
 
-    private fun displayError(message: String) {
-        statusTextView.text = "ERROR"
-        statusTextView.setTextColor(getColor(R.color.status_warning))
-        statusSubtitle.text = "Scan failed"
-        resultTextView.text = message
+    private fun showError(msg: String) {
+        tvStatus.text = "ERROR"
+        tvStatus.setTextColor(getColor(R.color.status_warning))
+        tvSubtitle.text = "Scan failed"
+        tvResult.text = msg
     }
 
     external fun nativeDetectRoot(): String
