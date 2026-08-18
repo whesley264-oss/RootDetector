@@ -19,8 +19,10 @@ struct CheckResult {
 
 struct RootDetectionReport {
     bool rootDetected;
+    int totalChecks;
+    int detectedCount;
     std::vector<CheckResult> checks;
-    RootDetectionReport() : rootDetected(false) {}
+    RootDetectionReport() : rootDetected(false), totalChecks(0), detectedCount(0) {}
 };
 
 class RootDetector {
@@ -30,26 +32,57 @@ public:
 
     RootDetectionReport detectRoot();
 
+    // --- Binário su e execução ---
     CheckResult checkSuBinary();
-    CheckResult checkMagiskFiles();
     CheckResult checkSuExecution();
-    CheckResult checkSystemProperties();
-    CheckResult checkMounts();
-    CheckResult checkBuildTags();
-    CheckResult checkRootManagementApps();
-    CheckResult checkSelinuxStatus();
-    CheckResult checkSystemPaths();
-    CheckResult checkLsCommand();
     CheckResult checkSuBinaryPermissions();
-    CheckResult checkRWPartitions();
-    CheckResult checkRootProcesses();
+    CheckResult checkSuEnvPath();
+
+    // --- Magisk / KernelSU / Zygisk ---
+    CheckResult checkMagiskFiles();
+    CheckResult checkMagiskDaemon();
+    CheckResult checkKernelSU();
+    CheckResult checkZygiskDenyList();
+    CheckResult checkMagiskHide();
+
+    // --- Apps de gerenciamento de root ---
+    CheckResult checkRootManagementApps();
+
+    // --- Propriedades do sistema / build ---
+    CheckResult checkSystemProperties();
+    CheckResult checkBuildTags();
     CheckResult checkCustomRom();
+
+    // --- Bootloader / verificação de boot ---
+    CheckResult checkBootloader();
+    CheckResult checkVerifiedBoot();
+
+    // --- Debug / ADB ---
+    CheckResult checkDebuggerAttached();
+    CheckResult checkAdbEnabled();
+    CheckResult checkDevelopmentSettings();
+
+    // --- Integridade do sistema ---
+    CheckResult checkSelinuxStatus();
+    CheckResult checkMounts();
+    CheckResult checkRWPartitions();
+    CheckResult checkSystemPaths();
+    CheckResult checkRootProcesses();
+    CheckResult checkLsCommand();
+
+    // --- Hooks / instrumentação ---
+    CheckResult checkFridaHooks();
+    CheckResult checkXposedFramework();
+    CheckResult checkEmulator();
 
 private:
     static bool fileExists(const char* path);
+    static bool dirExists(const char* path);
+    static bool globExists(const std::string& pattern);
     static bool getSystemProperty(const char* name, std::string& out);
     static bool readFile(const char* path, std::string& out);
     static bool isRunningAsRoot();
+    static bool processIsTraced();
     static std::pair<bool, std::string> executeCommand(const char* cmd, int timeoutMs = 1000);
 };
 

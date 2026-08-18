@@ -5,4 +5,11 @@
     <string name="app_subtitle">NDK Root Detection for Android</string>
     <string name="scanning">Scanning…</string>
     <string name="loading">Loading results…</string>
+    <string name="scan_button">Scan device</string>
+    <string name="status_ready">Ready</string>
+    <string name="status_scanning">Scanning</string>
+    <string name="status_secure">Device secure</string>
+    <string name="status_attention">Attention needed</string>
+    <string name="status_root">Root detected</string>
+    <string name="status_error">Scan failed</string>
 </resources>

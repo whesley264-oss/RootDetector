@@ -7,9 +7,9 @@ O objetivo do projeto é concentrar toda a lógica de detecção na camada nativ
 ## Recursos
 
 - C++17 + Android NDK
-- Interface simples em Kotlin
-- Relatório em JSON
-- 14 verificações de root
+- Interface moderna em Kotlin com cards dinâmicos e ícone de status
+- Relatório em JSON com totalizadores
+- **23 verificações de root**
 - Build automatizado com GitHub Actions
 
 ## Estrutura
@@ -24,23 +24,54 @@ app/
 └── .github/workflows/
 ```
 
-## Verificações
+## Verificações (23)
 
-Entre as verificações realizadas estão:
+A lógica fica toda no core em C++. As verificações realizadas são:
 
-- binário `su`
-- arquivos do Magisk
-- execução de comandos privilegiados
-- propriedades do sistema
-- status do SELinux
-- processos conhecidos
-- aplicativos relacionados a root
-- pontos de montagem
-- permissões do `su`
-- partições graváveis
-- indicadores de ROM modificada
+**Binário su e execução**
+- `su binary` — procura binário su em localizações conhecidas
+- `su execution` — tenta executar `su -c id`
+- `su binary permissions` — detecta binários su com SUID root
+- `su in PATH` — verifica se su está no PATH do ambiente
 
-O resultado é retornado em formato JSON contendo o status geral e o resultado individual de cada verificação.
+**Magisk / KernelSU / Zygisk**
+- `Magisk files` — arquivos e diretórios do Magisk
+- `Magisk daemon` — daemon magiskd em execução e mount namespace
+- `KernelSU` — arquivos e propriedades do KernelSU
+- `Zygisk deny list` — configuração/estrutura do Zygisk
+- `MagiskHide` — mounts e diretórios do MagiskHide
+
+**Apps de root**
+- `root management apps` — pacotes e binários de gerenciadores de root (SuperSU, Magisk, KingRoot etc.)
+
+**Propriedades do sistema / build**
+- `system properties` — `ro.secure`, `ro.debuggable`, `test-keys`, `verifiedbootstate`
+- `build tags` — `test-keys` no `ro.build.tags`
+- `custom ROM` — LineageOS, crDroid, EvolutionX, etc.
+
+**Bootloader / boot verificado**
+- `bootloader` — `ro.boot.flash.locked` e `veritymode`
+- `verified boot` — `ro.boot.verifiedbootstate`
+
+**Debug / ADB**
+- `debugger` — TracerPid / ptrace anexado
+- `ADB` — porta TCP do ADB, configuração USB e `settings_global.xml`
+- `development settings` — `ro.debuggable=1` e opções de desenvolvedor
+
+**Integridade do sistema**
+- `SELinux status` — SELinux permissive/disabled
+- `mount points` — `/system` e `/` montados RW
+- `RW partitions` — partições montadas como leitura/escrita
+- `system paths` — caminhos suspeitos (`/sbin`, `/system/xbin`, etc.)
+- `root processes` — `magiskd`, `daemonsu`, `ksud`, etc. em execução
+- `ls command access` — acesso a diretórios restritos
+
+**Hooks / instrumentação**
+- `Frida hooks` — binários/processos do frida-server e entradas em `/proc/self/maps`
+- `Xposed framework` — XposedBridge, LSPosed e arquivos relacionados
+- `emulator` — indicadores de QEMU/SDK/Genymotion/Nox/BlueStacks
+
+O resultado é retornado em formato JSON contendo o status geral, o total de verificações, o número de alertas e o resultado individual de cada verificação.
 
 ## Compilação
 
