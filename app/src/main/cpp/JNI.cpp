@@ -2,13 +2,6 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-
-#include "RootDetector.h"
-
-#include <jni.h>
-#include <string>
-#include <sstream>
-#include <iomanip>
 #include "RootDetector.h"
 
 static std::string jsonEscape(const std::string& s) {
@@ -38,6 +31,8 @@ static std::string generateJson(const RootDetector::RootDetectionReport& report)
     std::ostringstream json;
     json << "{\n";
     json << "  \"rootDetected\": " << (report.rootDetected ? "true" : "false") << ",\n";
+    json << "  \"totalChecks\": " << report.totalChecks << ",\n";
+    json << "  \"detectedCount\": " << report.detectedCount << ",\n";
     json << "  \"checks\": [\n";
     for (size_t i = 0; i < report.checks.size(); ++i) {
         const auto& c = report.checks[i];
